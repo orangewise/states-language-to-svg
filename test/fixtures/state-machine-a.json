@@ -1,0 +1,365 @@
+{
+  "StartAt": "CreateCleaning",
+  "States": {
+    "CreateCleaning": {
+      "Next": "Wait Cleaning Model",
+      "Parameters": {
+        "params": {
+          "TrainingJobName": "HelloAICleaningModel",
+          "AlgorithmSpecification": {
+            "TrainingImage": "123.dkr.ecr.eu-west-1.amazonaws.com/cdk/hello",
+            "TrainingInputMode": "File"
+          },
+          "RoleArn": "arn:aws:iam::123:role/HelloStack-SagemakerRole45ADFA73-ZLEL717REDR",
+          "OutputDataConfig": {
+            "S3OutputPath": "s3://HelloStack-inferencemodelbucket13ca7f1d-1xz7brf0bbqtk/cleaningModel"
+          },
+          "ResourceConfig": {
+            "InstanceCount": 1,
+            "InstanceType": "ml.m5.large",
+            "VolumeSizeInGB": 1
+          },
+          "StoppingCondition": {
+            "MaxRuntimeInSeconds": 86400
+          },
+          "InputDataConfig": [
+            {
+              "ChannelName": "training",
+              "DataSource": {
+                "S3DataSource": {
+                  "S3DataType": "S3Prefix",
+                  "S3Uri": "s3://HelloStack-outputbucket7114eb27-agjdl1i2o8ya/raw"
+                }
+              },
+              "ContentType": "text/csv"
+            }
+          ]
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateJobTraining2E0C2489-1EPPHHZRIDHDI"
+    },
+    "Wait Cleaning Model": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Cleaning Job Status"
+    },
+    "checkCleaningStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.TrainingJobStatus",
+          "StringEquals": "Completed",
+          "Next": "CreateCleaningModelTask"
+        },
+        {
+          "Variable": "$.TrainingJobStatus",
+          "StringEquals": "InProgress",
+          "Next": "Wait Cleaning Model"
+        }
+      ],
+      "Default": "Job Failed"
+    },
+    "Get Cleaning Job Status": {
+      "Next": "checkCleaningStatus",
+      "Parameters": {
+        "trainingJobName": "HelloAICleaningModel"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerGetTrainingStatus41B7FFF9-1WG736NGDIG6Z"
+    },
+    "Job Failed": {
+      "Type": "Fail",
+      "Error": "DescribeJob returned FAILED",
+      "Cause": "AWS Batch Job Failed"
+    },
+    "checkEndpointStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.EndpointStatus",
+          "StringEquals": "InService",
+          "Next": "Final step"
+        },
+        {
+          "Variable": "$.EndpointStatus",
+          "StringEquals": "Failed",
+          "Next": "Job Failed"
+        }
+      ],
+      "Default": "Wait Training Endpoint"
+    },
+    "Get Endpoint Status": {
+      "Next": "checkEndpointStatus",
+      "Parameters": {
+        "params": {
+          "EndpointName": "HelloAITrainModelInferenceEndPointv1"
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerGetEndpointStatus95026B8C-J7EQS9KIA2O0"
+    },
+    "Wait Training Endpoint": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Endpoint Status"
+    },
+    "CreateInferenceModelEndpointTask": {
+      "Next": "Wait Training Endpoint",
+      "Parameters": {
+        "params": {
+          "EndpointName": "HelloAITrainModelInferenceEndPointv1"
+        },
+        "ModelName": "HelloAITrainModel"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateInferenceModelEndpoint-C3G3QE7J4EKQ"
+    },
+    "CreateInferenceModelEndpointConfigFunctionTask": {
+      "Next": "CreateInferenceModelEndpointTask",
+      "Parameters": {
+        "params": {
+          "ProductionVariants": [
+            {
+              "InitialInstanceCount": 1,
+              "InitialVariantWeight": 1,
+              "InstanceType": "ml.t2.medium",
+              "ModelName": "HelloAITrainModel",
+              "VariantName": "AllTrafic"
+            }
+          ]
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateInferenceModelEndpoint-19I3L6VFCRTYD"
+    },
+    "CreateModelTask": {
+      "Next": "CreateInferenceModelEndpointConfigFunctionTask",
+      "Parameters": {
+        "params": {
+          "PrimaryContainer": {
+            "Image": "123.dkr.ecr.eu-west-1.amazonaws.com/cdk/HelloStacksagemakerinferencedockerimagebd55b87a"
+          },
+          "ExecutionRoleArn": "arn:aws:iam::123:role/HelloStack-SagemakerRole45ADFA73-ZLEL717REDR",
+          "ModelName": "HelloAITrainModel"
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateModel1B0555E6-TA0TOORY62IZ"
+    },
+    "checkTrainingStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.TrainingJobStatus",
+          "StringEquals": "Completed",
+          "Next": "CreateModelTask"
+        },
+        {
+          "Variable": "$.TrainingJobStatus",
+          "StringEquals": "InProgress",
+          "Next": "Wait Training Model"
+        }
+      ],
+      "Default": "Job Failed"
+    },
+    "Get Job Status": {
+      "Next": "checkTrainingStatus",
+      "Parameters": {
+        "trainingJobName": "HelloAITrainModel"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerGetTrainingStatus41B7FFF9-1WG736NGDIG6Z"
+    },
+    "Wait Training Model": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Job Status"
+    },
+    "CreateTraining": {
+      "Next": "Wait Training Model",
+      "Parameters": {
+        "params": {
+          "TrainingJobName": "HelloAITrainModel",
+          "AlgorithmSpecification": {
+            "TrainingImage": "123.dkr.ecr.eu-west-1.amazonaws.com/cdk/HelloStacksagemakerinferencedockerimagebd55b87a",
+            "TrainingInputMode": "File"
+          },
+          "RoleArn": "arn:aws:iam::123:role/HelloStack-SagemakerRole45ADFA73-ZLEL717REDR",
+          "OutputDataConfig": {
+            "S3OutputPath": "s3://HelloStack-inferencemodelbucket13ca7f1d-1xz7brf0bbqtk/inferenceModel"
+          },
+          "ResourceConfig": {
+            "InstanceCount": 1,
+            "InstanceType": "ml.m5.large",
+            "VolumeSizeInGB": 1
+          },
+          "HyperParameters": {
+            "min_df": "5",
+            "max_df": "0.3",
+            "C": "100",
+            "kernel": "rbf",
+            "gamma": "scale",
+            "class_weight": "balanced"
+          },
+          "StoppingCondition": {
+            "MaxRuntimeInSeconds": 86400
+          },
+          "InputDataConfig": [
+            {
+              "ChannelName": "training",
+              "DataSource": {
+                "S3DataSource": {
+                  "S3DataType": "S3Prefix",
+                  "S3Uri": "s3://HelloStack-outputbucket7114eb27-agjdl1i2o8ya/train"
+                }
+              },
+              "ContentType": "text/csv"
+            }
+          ]
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateJobTraining2E0C2489-1EPPHHZRIDHDI"
+    },
+    "checkCleaningBatchTransformJobStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.TransformJobStatus",
+          "StringEquals": "Completed",
+          "Next": "CreateTraining"
+        },
+        {
+          "Variable": "$.TransformJobStatus",
+          "StringEquals": "Failed",
+          "Next": "Job Failed"
+        }
+      ],
+      "Default": "Wait Cleaning Batch Transform"
+    },
+    "Get Cleaning Transform Job Status": {
+      "Next": "checkCleaningBatchTransformJobStatus",
+      "Parameters": {
+        "transformJobName": "HelloAICleaningBatchTransform"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerGetTransformJobStatusBEFE7EA-E09Z2LJLX29S"
+    },
+    "Wait Cleaning Batch Transform": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Cleaning Transform Job Status"
+    },
+    "CreateCleaningTransformJobTask": {
+      "Next": "Wait Cleaning Batch Transform",
+      "Parameters": {
+        "params": {
+          "ModelName": "HelloAICleaningModel",
+          "TransformInput": {
+            "DataSource": {
+              "S3DataSource": {
+                "S3DataType": "S3Prefix",
+                "S3Uri": "s3://HelloStack-outputbucket7114eb27-agjdl1i2o8ya/raw"
+              }
+            },
+            "ContentType": "text/csv",
+            "SplitType": "Line"
+          },
+          "TransformJobName": "HelloAICleaningBatchTransform",
+          "TransformOutput": {
+            "S3OutputPath": "s3://HelloStack-outputbucket7114eb27-agjdl1i2o8ya/clean",
+            "AssembleWith": "Line"
+          },
+          "TransformResources": {
+            "InstanceCount": 1,
+            "InstanceType": "ml.m5.large"
+          },
+          "BatchStrategy": "SingleRecord",
+          "MaxPayloadInMB": 6
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateTransformJob44765656-6XVDMX1B1B6C"
+    },
+    "checkCleaningEndpointStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.EndpointStatus",
+          "StringEquals": "InService",
+          "Next": "CreateCleaningTransformJobTask"
+        },
+        {
+          "Variable": "$.EndpointStatus",
+          "StringEquals": "Failed",
+          "Next": "Job Failed"
+        }
+      ],
+      "Default": "Wait Cleaning Endpoint"
+    },
+    "Get Cleaning Endpoint Status": {
+      "Next": "checkCleaningEndpointStatus",
+      "Parameters": {
+        "params": {
+          "EndpointName": "HelloAICleaningModelInferenceEndPointv1"
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerGetEndpointStatus95026B8C-J7EQS9KIA2O0"
+    },
+    "Wait Cleaning Endpoint": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Cleaning Endpoint Status"
+    },
+    "CreateCleaningModelEndpointTask": {
+      "Next": "Wait Cleaning Endpoint",
+      "Parameters": {
+        "params": {
+          "EndpointName": "HelloAICleaningModelInferenceEndPointv1"
+        },
+        "ModelName": "HelloAICleaningModel"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateInferenceModelEndpoint-C3G3QE7J4EKQ"
+    },
+    "CreateCleaningModelEndpointConfigFunctionTask": {
+      "Next": "CreateCleaningModelEndpointTask",
+      "Parameters": {
+        "params": {
+          "ProductionVariants": [
+            {
+              "InitialInstanceCount": 1,
+              "InitialVariantWeight": 1,
+              "InstanceType": "ml.t2.medium",
+              "ModelName": "HelloAICleaningModel",
+              "VariantName": "AllTrafic"
+            }
+          ]
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateInferenceModelEndpoint-19I3L6VFCRTYD"
+    },
+    "CreateCleaningModelTask": {
+      "Next": "CreateCleaningModelEndpointConfigFunctionTask",
+      "Parameters": {
+        "params": {
+          "PrimaryContainer": {
+            "Image": "123.dkr.ecr.eu-west-1.amazonaws.com/cdk/HelloStacksagemakercleaningdockerimagefd6973bc"
+          },
+          "ExecutionRoleArn": "arn:aws:iam::123:role/HelloStack-SagemakerRole45ADFA73-ZLEL717REDR",
+          "ModelName": "HelloAICleaningModel"
+        }
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:123:function:HelloStack-SagemakerCreateModel1B0555E6-TA0TOORY62IZ"
+    },
+    "Final step": {
+      "Type": "Pass",
+      "End": true
+    }
+  },
+  "TimeoutSeconds": 7200
+}

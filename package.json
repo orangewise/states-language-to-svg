@@ -1,0 +1,23 @@
+{
+  "name": "states-language-to-image",
+  "version": "0.0.1",
+  "description": "generates an image from a states-language json doc",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard"
+  },
+  "keywords": [
+    "states-language",
+    "image"
+  ],
+  "author": "Ronald Luitwieler",
+  "license": "ISC",
+  "dependencies": {
+    "dottle": "^0.1.4",
+    "standard": "^14.3.1"
+  },
+  "engines": {
+    "node": ">=11",
+    "npm": ">=5.0.0"
+  }
+}
