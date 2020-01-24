@@ -1,19 +1,24 @@
 {
-  "name": "states-language-to-image",
+  "name": "states-language-to-svg",
   "version": "0.0.1",
-  "description": "generates an image from a states-language json doc",
+  "description": "generates an svg from a states-language json doc",
   "main": "index.js",
   "scripts": {
     "test": "standard"
   },
   "keywords": [
+    "aws",
     "states-language",
-    "image"
+    "svg"
   ],
   "author": "Ronald Luitwieler",
   "license": "ISC",
   "dependencies": {
     "dottle": "^0.1.4",
+    "get-stdin": "^7.0.0",
+    "viz.js": "^1.8.2"
+  },
+  "devDependencies": {
     "standard": "^14.3.1"
   },
   "engines": {
