@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const Viz = require('viz.js')
-const dottle = require('dottle')
+const dottle = require('@robodo/dottle')
 const getStdin = require('get-stdin')
 
 async function go() {

@@ -17,7 +17,7 @@
   "author": "Ronald Luitwieler",
   "license": "ISC",
   "dependencies": {
-    "dottle": "^0.1.4",
+    "@robodo/dottle": "^0.1.4",
     "get-stdin": "^7.0.0",
     "viz.js": "^1.8.2"
   },
