@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
-const Viz = require('viz.js')
-const dottle = require('@robodo/dottle')
 const getStdin = require('get-stdin')
+const dot = require('../index.js')
 
-async function go() {
+async function go () {
   const sm = await getStdin()
-  const input = await dottle.readOne(sm, {})
-  const output = Viz(input, { format: 'svg', engine: 'dot' })
-  console.log(output)
+  const input = await dot.graph(sm)
+  const svg = dot.svg(input)
+  console.log(svg)
 }
 
 go()
