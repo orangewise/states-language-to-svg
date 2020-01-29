@@ -1,6 +1,7 @@
 const assert = require('assert')
 const dot = require('../index.js')
 const fs = require('fs')
+const join = require('path').join
 
 async function test () {
   const sm = JSON.stringify(require('./fixtures/state-machine-a.json'))
@@ -9,7 +10,7 @@ async function test () {
   assert.strictEqual(graph, expectedGraph)
 
   const svg = dot.svg(graph)
-  const expectedSvg = fs.readFileSync('./test/fixtures/out.svg', 'utf-8')
+  const expectedSvg = fs.readFileSync(join(__dirname, 'fixtures', 'out.svg'), 'utf-8')
   assert.strictEqual(svg, expectedSvg)
 }
 
