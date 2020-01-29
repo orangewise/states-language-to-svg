@@ -1,6 +1,6 @@
 {
   "name": "states-language-to-svg",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "generates an svg from a states-language json doc",
   "bin": {
     "states-language-to-svg": "bin/index.js"
